@@ -1,0 +1,52 @@
+[project]
+name = "selex-analyze-poc"
+version = "0.1.0"
+description = "Bioinformatics Term-Project (2025-Fall): SELEX analyze PoC"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+authors = [{ name = "Seungwon Lee", email = "lsw1167@gmail.com" }]
+keywords = []
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+  "torch>=2.9.1",
+  "torch-geometric>=2.7.0",
+  "transformers>=4.57.3",
+  "multimolecule>=0.0.8",
+  "viennarna>=2.7.1",
+  "polars>=1.0.0",
+  "numpy>=2.0.0",
+  "scikit-learn>=1.5.0",
+  "umap-learn>=0.5.0",
+  "matplotlib>=3.9.0",
+  "click>=8.1.0",
+]
+
+[project.optional-dependencies]
+gpu = [
+  "cupy-cuda12x; sys_platform == 'linux'",
+  "cuml-cu12; sys_platform == 'linux'",
+  "hdbscan>=0.8.0; sys_platform == 'linux'",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.0,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "C4", "SIM"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
