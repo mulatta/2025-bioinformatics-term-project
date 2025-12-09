@@ -26,7 +26,7 @@ variable "pod_name" {
 resource "runpod_pod" "rna_fm" {
   name = var.pod_name
 
-  image_name = "pytorch/pytorch:2.1.0-cuda12.1-cudnn8-devel"
+  image_name = "runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2204"
 
   gpu_type_ids = [
     "NVIDIA GeForce RTX 3090",
