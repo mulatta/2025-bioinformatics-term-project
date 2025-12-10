@@ -1,0 +1,5 @@
+method,auc_roc,n_sequences,n_seeds,precision@10,precision@50,precision@100,precision@500,recall@10,recall@50,recall@100,recall@500
+CountFoldChange,0.9339625832941717,31136,100,0.0,0.0,0.0,0.008,0.0,0.0,0.0,0.04
+ClusterEnrichment(RNA-FM (mean pooling)),0.725799227519176,55247,100,0.1,0.02,0.01,0.006,0.01,0.01,0.01,0.03
+ClusterEnrichment(OneHot (L=100) + 3-mer Counts + Thermodynamic (ViennaRNA)),0.6538041053910458,55247,100,0.0,0.0,0.0,0.006,0.0,0.0,0.0,0.03
+ClusterEnrichment(BPPM-GAT),0.5818565833136888,55247,100,0.0,0.0,0.0,0.002,0.0,0.0,0.0,0.01

@@ -1,159 +1,110 @@
-# selex-analyze-poc
+# SELEX Analyze PoC
 
-A Python project managed with [uv](https://docs.astral.sh/uv/) and [Nix](https://nixos.org/) using [uv2nix](https://github.com/pyproject-nix/uv2nix).
+Bioinformatics Term-Project (2025-Fall): Comparing RNA embedding methods for SELEX aptamer selection.
 
-## Getting Started
+## Overview
 
-After initializing this template, run the init script to set your project name:
+This project evaluates whether foundation model embeddings can effectively identify enriched sequences in SELEX data. We compare:
 
-```bash
-# Initialize with your project name
-nix run github:zmblr/toolz#init-template -- my-project-name .
+- **Count-Based Baseline**: Fold-change between rounds
+- **Physics-Based**: OneHot + k-mer + ViennaRNA thermodynamics
+- **Foundation Model**: RNA-FM (mean pooling)
+- **Graph Neural Network**: BPPM-GAT
 
-# Or if you cloned toolz locally
-nix run .#init-template -- my-project-name .
-```
+## Results
 
-## Prerequisites
+| Method                | AUC-ROC |
+| --------------------- | ------- |
+| CountFoldChange       | 0.934   |
+| RNA-FM (mean pooling) | 0.726   |
+| Physics-Based         | 0.654   |
+| BPPM-GAT              | 0.582   |
 
-- [Nix](https://nixos.org/download.html) with flakes enabled
-- [direnv](https://direnv.net/) (optional, for automatic environment activation)
+**Conclusion**: Simple count-based methods outperform embedding-based approaches for seed recovery in this dataset.
 
-## Development Shells
+![Comparison Summary](results/poc_comparison_summary.png)
 
-This template provides two development shells (no `default` - explicit choice required):
-
-| Shell    | Command                | Use Case                                                 |
-| -------- | ---------------------- | -------------------------------------------------------- |
-| `impure` | `nix develop .#impure` | Development, editable installs, `uv pip install` support |
-| `pure`   | `nix develop .#pure`   | CI/deployment, pure Nix-managed environment              |
-
-### Impure Shell (Development)
+## Installation
 
 ```bash
-nix develop .#impure
+# Requires Python 3.12+
+uv sync
 
-# Or with direnv (recommended)
-direnv allow
+# With GPU support (Linux only)
+uv sync --extra gpu
 ```
 
-Features:
-
-- Automatic `.venv` creation and activation
-- Auto-creates/updates `uv.lock` when needed
-- Supports `uv add`, `uv pip install`, `uv sync`
-- Editable installs for immediate code changes
-
-### Pure Shell (CI/Deployment)
+## Usage
 
 ```bash
-nix develop .#pure
+python -m selex_analyze_poc.compare_embeddings \
+    --data-dir ./data/aptasuite/ \
+    --seeds-file ./data/aptasuite/seeds.txt \
+    --output-dir ./results/
 ```
 
-Features:
+### Options
 
-- Reproducible Nix-managed environment
-- No mutable state (`.venv` not used)
-- Suitable for CI pipelines and deployment testing
-- Requires `uv.lock` to exist (run `impure` first)
+| Flag           | Description                              |
+| -------------- | ---------------------------------------- |
+| `--n-clusters` | Number of K-Means clusters (default: 20) |
+| `--device`     | cpu/cuda/auto                            |
+| `--max-len`    | Max sequence length (default: 100)       |
+| `--skip-rnafm` | Skip RNA-FM (slow without GPU)           |
+| `--skip-gat`   | Skip BPPM-GAT                            |
 
-## Quick Start
+## Infrastructure
+
+### GPU Pod Provisioning (RunPod)
+
+Uses Terraform + OpenTofu to provision GPU instances on RunPod.
 
 ```bash
-# 1. Initialize template
-nix run github:zmblr/toolz#init-template -- my-project .
+cd terraform/runpod
 
-# 2. Enter development shell (creates uv.lock)
-nix develop .#impure
-# Or: direnv allow
+# Initialize
+tofu init
 
-# 3. Add dependencies
-uv add requests
+# Deploy
+tofu apply
 
-# 4. Install extra packages
-uv pip install some-package
+# Destroy
+tofu destroy
 ```
 
-## Building the Package
+**Configuration** (`terraform/runpod/main.tf`):
 
-```bash
-# Build the default package (creates a virtual environment)
-nix build
+- GPU: RTX 3090 / RTX 4090 / A6000
+- Image: `runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2204`
+- Storage: 50GB volume + 20GB container disk
 
-# Build with all optional dependencies
-nix build .#full
-
-# Run the package directly
-nix run
-```
-
-## Formatting and Linting
-
-```bash
-# Format all code
-nix fmt
-
-# Run linters
-ruff check src/
-mypy src/
-```
+Secrets are managed via SOPS (`terraform/secrets.yaml`).
 
 ## Project Structure
 
 ```
 .
-├── flake.nix           # Nix flake definition
-├── pyproject.toml      # Python project configuration
-├── uv.lock             # uv lock file (auto-generated in impure shell)
-├── nix/
-│   ├── uv2nix.nix      # uv2nix workspace configuration
-│   ├── packages.nix    # Package outputs
-│   ├── shell.nix       # Development shell configuration
-│   └── formatter.nix   # Code formatting configuration
-└── src/
-    └── selex_analyze_poc/
-        └── __init__.py
+├── src/selex_analyze_poc/
+│   ├── base.py              # Base classes
+│   ├── extractors.py        # Feature extractors
+│   ├── ranker.py            # Ranking methods
+│   ├── evaluation.py        # Metrics & visualization
+│   └── compare_embeddings.py # Main comparison script
+├── terraform/
+│   └── runpod/              # GPU infrastructure
+├── results/
+│   ├── comparison_table.csv
+│   ├── poc_comparison_summary.png
+│   └── umap_comparison.png
+└── pyproject.toml
 ```
 
-## Nix Flake Outputs
+## Dependencies
 
-| Output             | Description                                   |
-| ------------------ | --------------------------------------------- |
-| `packages.default` | Virtual environment with default dependencies |
-| `packages.full`    | Virtual environment with all dependencies     |
-| `devShells.impure` | Development shell with editable installs      |
-| `devShells.pure`   | Pure Nix-managed shell (CI/deployment)        |
-
-## How It Works
-
-1. **uv** manages Python dependencies and generates `uv.lock`
-2. **uv2nix** reads the lock file and generates Nix derivations
-3. **pyproject-nix** provides build infrastructure
-4. **flake-parts** organizes the flake into modular components
-
-### Shell Comparison
-
-| Feature               | `impure` | `pure` |
-| --------------------- | -------- | ------ |
-| Reproducible          | -        | +      |
-| Editable installs     | +        | -      |
-| `uv pip install`      | +        | -      |
-| Auto venv activation  | +        | N/A    |
-| Auto `uv.lock` update | +        | -      |
-| CI suitable           | -        | +      |
-
-## Updating Dependencies
-
-```bash
-# In impure shell, dependencies sync automatically
-nix develop .#impure
-
-# Update a specific package
-uv lock --upgrade-package requests
-
-# Update all packages
-uv lock --upgrade
-```
+- PyTorch + PyTorch Geometric
+- Transformers + MultiMolecule (RNA-FM)
+- ViennaRNA
+- Polars, scikit-learn, UMAP
 
 ## License
 
